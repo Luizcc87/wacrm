@@ -149,6 +149,14 @@ rather than here. Details in
 [`CONTRIBUTING.md`](./CONTRIBUTING.md) and
 [`.github/SECURITY.md`](./.github/SECURITY.md).
 
+## Mantendo seu Fork Atualizado
+
+Para instruções detalhadas de como manter o seu repositório atualizado com as últimas versões do mantenedor original usando o fluxo de **Git Rebase**, consulte o nosso [Guia de Atualização (Git Workflow)](./docs/git-workflow.md).
+
+- [Database Documentation](supabase/README.md)
+- [Git Workflow Guide](docs/git-workflow.md)
+- [Docker Swarm Deployment (aarch64/amd64)](specs/001-docker-swarm-aarch64/quickstart.md)
+
 ## License
 
 [MIT](./LICENSE). Fork it, brand it, host it.
