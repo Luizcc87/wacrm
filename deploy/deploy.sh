@@ -16,8 +16,16 @@ set -a
 source .env
 set +a
 
-echo "Deploying the stack 'wacrm'..."
-docker stack deploy -c docker-compose.yml wacrm
+# Define the stack file (default to postgres if none is passed)
+STACK_FILE=${1:-docker-compose.postgres.yml}
+
+if [ ! -f "$STACK_FILE" ]; then
+  echo "Error: Stack file '$STACK_FILE' not found."
+  exit 1
+fi
+
+echo "Deploying the stack 'wacrm' using $STACK_FILE..."
+docker stack deploy -c "$STACK_FILE" wacrm
 
 echo "======================================"
 echo " Deployment triggered successfully.   "
