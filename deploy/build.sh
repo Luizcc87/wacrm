@@ -13,9 +13,20 @@ docker buildx create --name multiarch-builder --use || true
 # Get the absolute path to the project root
 PROJECT_ROOT=$(cd "$(dirname "$0")/.." && pwd)
 
+# Load environment variables if .env exists
+if [ -f "$PROJECT_ROOT/.env" ]; then
+  export $(grep -v '^#' "$PROJECT_ROOT/.env" | xargs)
+fi
+
 echo "Building and pushing multi-arch images (amd64, arm64) for $IMAGE_NAME..."
 # Using the project root as the build context
-docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME --push "$PROJECT_ROOT"
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
+  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
+  -t "${IMAGE_NAME}" \
+  -f "$PROJECT_ROOT/Dockerfile" \
+  --push "$PROJECT_ROOT"
 
 echo "======================================"
 echo " Build and push complete!             "

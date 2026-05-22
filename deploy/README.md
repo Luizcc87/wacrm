@@ -52,5 +52,5 @@ Como o nosso serviço Web está conectado na rede `network_swarm_public`, você 
    - **Domain**: Escolha o seu domínio que já está no Cloudflare (ex: `seudominio.com.br`).
    - **Service**: 
      - *Type*: `HTTP`
-     - *URL*: `web:80` (Atenção: como o Cloudflared e o Wacrm estarão na mesma VPS e podem ser colocados na mesma rede Docker `network_swarm_public`, você pode usar o nome do serviço "web" do swarm. Caso o Cloudflared esteja rodando fora do docker, a URL será `localhost:80` caso você tenha mantido a porta 80 exposta no `docker-compose`).
+     - *URL*: `wacrm_web:3000` (Atenção: como estamos usando Docker Swarm, o DNS interno do Docker junta o nome da stack com o serviço: `<stack>_<servico>`. Como nossa stack chama `wacrm` e o serviço `web`, a URL correta é `wacrm_web:3000`. O Node.js roda internamente na porta **3000**).
 6. Salve o Hostname. Em questão de segundos, a sua aplicação Wacrm já estará disponível em `https://app.seudominio.com.br` com proteção anti-DDoS e certificado SSL válidos!
