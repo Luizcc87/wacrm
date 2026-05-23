@@ -5,15 +5,9 @@ O sistema foi projetado para ser agnóstico em relação ao banco de dados, ofer
 
 ## 1. Escolhendo a Stack (Arquitetura)
 
-### Opção A: Stack com Banco Local (Postgres 18)
-Utiliza o arquivo `docker-compose.postgres.yml`. Ideal para quem não quer depender de serviços externos. O banco de dados roda na própria VPS junto com a aplicação.
-- **Variáveis essenciais no `.env`**:
-  ```env
-  POSTGRES_PASSWORD=sua_senha_super_secreta
-  DATABASE_URL=postgres://postgres:sua_senha_super_secreta@db:5432/postgres
-  ```
+O sistema deve obrigatoriamente utilizar o Supabase Cloud, visto que o Wacrm depende não só do banco de dados, mas também do serviço de Autenticação (GoTrue) e APIs Rest (PostgREST) embutidos no ecossistema do Supabase.
 
-### Opção B: Stack com Supabase Cloud
+### Stack: Supabase Cloud
 Utiliza o arquivo `docker-compose.supabase.yml`. Ideal para produção em larga escala. O serviço do banco de dados foi removido do Docker, e a aplicação Wacrm conecta diretamente na nuvem do Supabase.
 - **Variáveis essenciais no `.env`**:
   ```env
@@ -26,11 +20,8 @@ O script `deploy.sh` foi atualizado para aceitar o arquivo da stack como parâme
 Para realizar a implantação, rode:
 
 ```bash
-# Para fazer deploy com o banco local:
-./deploy.sh docker-compose.postgres.yml
-
-# Ou, para fazer deploy usando Supabase Cloud:
-./deploy.sh docker-compose.supabase.yml
+# Para fazer deploy usando Supabase Cloud:
+./deploy/deploy.sh deploy/docker-compose.supabase.yml
 ```
 
 ---
@@ -54,3 +45,17 @@ Como o nosso serviço Web está conectado na rede `network_swarm_public`, você 
      - *Type*: `HTTP`
      - *URL*: `wacrm_web:3000` (Atenção: como estamos usando Docker Swarm, o DNS interno do Docker junta o nome da stack com o serviço: `<stack>_<servico>`. Como nossa stack chama `wacrm` e o serviço `web`, a URL correta é `wacrm_web:3000`. O Node.js roda internamente na porta **3000**).
 6. Salve o Hostname. Em questão de segundos, a sua aplicação Wacrm já estará disponível em `https://app.seudominio.com.br` com proteção anti-DDoS e certificado SSL válidos!
+
+---
+
+## 4. Configurando o Redirecionamento de E-mails (Supabase Auth)
+
+Quando novos usuários criam contas ou solicitam redefinição de senha, o Supabase dispara um e-mail contendo um link de confirmação. Por padrão, esse link aponta para `http://localhost:3000`.
+
+Para garantir que o usuário seja redirecionado para o seu domínio em produção após clicar no e-mail:
+
+1. Acesse o painel do seu projeto no **Supabase**.
+2. No menu lateral, navegue até **Authentication** -> **URL Configuration**.
+3. No campo **Site URL**, apague `http://localhost:3000` e preencha com a sua URL pública final (Ex: `https://app.seudominio.com.br`).
+4. Logo abaixo, na seção **Redirect URLs**, clique em "Add URL" e insira `https://app.seudominio.com.br/*` (isso permite redirecionamentos internos seguros).
+5. Salve as alterações. Os próximos e-mails enviados já apontarão corretamente para o seu sistema em produção!
