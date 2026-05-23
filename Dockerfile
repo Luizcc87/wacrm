@@ -21,9 +21,9 @@ COPY . .
 # Uncomment the following line in case you want to disable telemetry during the build.
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Aceita variáveis reais no momento do build (necessário para o Frontend React)
+# Variáveis Placeholder: Serão substituídas pelo entrypoint.sh via Portainer
 ARG NEXT_PUBLIC_SUPABASE_URL="https://placeholder.supabase.co"
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder"
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY="placeholder_anon_key"
 
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -52,6 +52,10 @@ RUN chown nextjs:nodejs .next
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
+# Copia o Entrypoint
+COPY --chown=nextjs:nodejs deploy/entrypoint.sh /app/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
+
 USER nextjs
 
 EXPOSE 3000
@@ -60,4 +64,5 @@ ENV PORT=3000
 # set hostname to 0.0.0.0
 ENV HOSTNAME="0.0.0.0"
 
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["node", "server.js"]

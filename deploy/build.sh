@@ -22,8 +22,6 @@ echo "Building and pushing multi-arch images (amd64, arm64) for $IMAGE_NAME..."
 # Using the project root as the build context
 docker buildx build \
   --platform linux/amd64,linux/arm64 \
-  --build-arg NEXT_PUBLIC_SUPABASE_URL="${NEXT_PUBLIC_SUPABASE_URL}" \
-  --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="${NEXT_PUBLIC_SUPABASE_ANON_KEY}" \
   -t "${IMAGE_NAME}" \
   -f "$PROJECT_ROOT/Dockerfile" \
   --push "$PROJECT_ROOT"

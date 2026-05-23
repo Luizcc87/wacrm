@@ -15,6 +15,8 @@ services:
     environment:
       APP_URL: ${APP_URL}
       DATABASE_URL: ${DATABASE_URL}
+      NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
     # Portas desativadas no host para evitar conflito com Traefik/Cloudflare Tunnel
     # O acesso ocorre diretamente via rede interna do Swarm (network_swarm_public)
