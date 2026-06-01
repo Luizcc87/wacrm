@@ -1,4 +1,4 @@
-﻿#!/bin/sh
+#!/bin/sh
 set -e
 
 # Substitui o placeholder pelas variáveis de ambiente de runtime (Portainer)
