@@ -11,14 +11,17 @@ and polish.
 
 ## [Unreleased]
 
-Foundation for multi-user accounts. Every wacrm install becomes
-multi-tenant on the database side: a single user's signup creates a
-fresh "account", and every row is scoped to that account rather than
-to the user directly. The user-visible invite / members surface lands
-in follow-up PRs gated by the `'account_sharing'` beta feature flag —
-this release is wiring with no behaviour change on its own. Existing
+Multi-user accounts ship. Every wacrm install is multi-tenant on the
+database side: a single user's signup creates a fresh "account", and
+every row is scoped to that account rather than to the user directly.
+This release also opens the user-visible **Members** surface — invite
+teammates by link, manage their roles, transfer ownership — to all
+users. The `'account_sharing'` beta gate that hid it during
+development is removed (mirrors the Flows soft-GA in 0.2.0). Existing
 self-hosted instances keep working: every existing user is backfilled
-as the sole owner of their own account and sees identical data.
+as the sole owner of their own account and sees identical data, and a
+solo owner who never invites anyone sees the same single-user app they
+always did.
 
 ### Changed
 
@@ -71,9 +74,15 @@ as the sole owner of their own account and sees identical data.
   silently broken to a teammate looking at a feature they don't
   yet have permission for.
 - **Sidebar surfaces the active account** above the user info
-  when the `account_sharing` beta flag is on. Solo users keep
-  the original layout (their account is named after them, so
-  duplicating it would just add visual noise).
+  whenever the account name differs from your own — i.e. once
+  you've renamed the account or joined a shared one. A default
+  solo account is named after you, so the strip stays hidden to
+  avoid duplicating your name in the footer.
+- **Members is open to all users.** The `account_sharing` beta
+  flag that hid the Settings → Members tab and the sidebar
+  account strip during development is gone; the multi-user
+  surface is now part of the standard app. (Same soft-GA move as
+  Flows in 0.2.0.)
 
 ### Fixed
 
@@ -91,8 +100,38 @@ as the sole owner of their own account and sees identical data.
 
 ### Added
 
+- **Duplicate phone numbers are now prevented across contacts.** A
+  phone number can no longer become more than one contact in the same
+  account. Adding a contact whose number already exists is blocked
+  with a link to the existing record (and a softer warning for
+  near-matches that share their last 8 digits); CSV import de-dupes
+  within the file and against existing contacts, reporting
+  "X imported, Y duplicates skipped". The rule is enforced by a
+  database unique index on the normalized number, so the WhatsApp
+  webhook, the form, import, and any future path all agree. Existing
+  duplicates are merged into the oldest contact on upgrade (their
+  conversations, deals, notes, and tags are re-pointed, nothing is
+  lost). Closes #212.
+- **Configurable default deal currency.** Each account can now pick
+  its default currency under **Settings → Deals** (admin+); the app
+  previously hardcoded USD throughout. New deals default to it, and
+  pipeline-stage totals, the dashboard "Open Deals Value" card, the
+  pipeline-value donut, and automation-created deals all use it.
+  Existing deals keep the currency they were saved with — totals are
+  shown in the account default with no exchange-rate conversion (one
+  currency per account). Full guide:
+  [Default currency](https://wacrm.tech/docs/settings#deals).
+- **Members tab in Settings.** The user-facing surface for the
+  multi-user APIs below, available to everyone (no beta flag). From
+  Settings → **Members** an admin or owner can: see who's on the
+  account with their role and join date, invite teammates by
+  generating a one-time share link (pick the role + optional
+  expiry), revoke pending invites, change a member's role, remove a
+  member, and — as owner — transfer ownership. Recipients accept via
+  a public `/join/[token]` page. Full guide:
+  [Members docs](https://wacrm.tech/docs/members).
 - **Account & member management API** — server-side endpoints
-  for the upcoming Members tab UI. All routes are role-gated and
+  backing the Members tab. All routes are role-gated and
   return Supabase-RLS-scoped data.
   - `GET /api/account` — caller's account + role. Any member.
   - `PATCH /api/account` — rename the account. Admin+.
@@ -108,8 +147,8 @@ as the sole owner of their own account and sees identical data.
   - `POST /api/account/transfer-ownership` — owner only. Atomic
     swap with the named member.
 - **Invitation API + redeem flow** — the no-email, link-only
-  invite path. Backend is complete; the Members tab UI that
-  drives it lands in a follow-up.
+  invite path that powers the Members tab's "Invite member" button
+  and the `/join/[token]` accept page.
   - `GET /api/account/invitations` — list outstanding (admin+).
   - `POST /api/account/invitations` — create an invite, returns
     the plaintext token + share URL **exactly once** (we store
@@ -151,6 +190,20 @@ Apply against your Supabase project before deploying this version:
   `redeem_invitation` (authenticated atomic move + orphan
   cleanup, with a domain-data safety check). Both bypass the
   RLS that would otherwise block their reads/writes. Idempotent.
+- `supabase/migrations/021_account_default_currency.sql` — adds
+  `accounts.default_currency` (`TEXT NOT NULL DEFAULT 'USD'`, with a
+  3-letter-code `CHECK`) backing the configurable default currency.
+  Idempotent; existing accounts backfill to `USD`. **Apply before
+  deploying** — the app now reads this column when loading the
+  account, so an un-migrated database breaks account loading.
+- `supabase/migrations/022_contact_phone_dedup.sql` — adds the
+  generated `contacts.phone_normalized` column, **merges existing
+  duplicate contacts into the oldest** (re-pointing conversations,
+  deals, notes, tags, custom values, and broadcast recipients — no
+  data loss), then adds a `UNIQUE (account_id, phone_normalized)`
+  index. Idempotent. **Apply before deploying** — CSV import reads
+  `phone_normalized`, and the index is what enforces de-duplication
+  for every write path. The one-shot merge runs inside the migration.
 
 ## [0.2.2] — 2026-05-29
 
